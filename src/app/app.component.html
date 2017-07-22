@@ -2,12 +2,12 @@
 <div class="container">
 	<div class="col-sm-4">
 		<h1>{{title}}</h1>
-		<input type="button" value="Add Sheep" (click)="addSheep()"> Sheep: {{sheepCount}} sheepList: {{sheepList.length}}
+		<input type="button" value="Add Sheep" (click)="addSheep()"> Sheep: {{sheepCount}} flock: {{flock.length}}
 	</div>
 	<div class="col-sm-4">
 		<div class="field">
-			<div *ngFor="let sheep of sheepList">
-				<sheep></sheep>
+			<div *ngFor="let sheep of flock">
+				<sheep [sheep]="sheep"></sheep>
 			</div>
 		</div>
 	</div>

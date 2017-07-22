@@ -1,9 +1,12 @@
-import { Component , OnInit} from '@angular/core';
+import { Component , OnInit, Input} from '@angular/core';
+
+import { Sheep } from './sheep';
+import { SheepService } from './sheep.service';
 
 @Component({
   selector: 'sheep',
   template: `
-  	<div class="sheep" [style.left.px]="sl" [style.top.px]="st" (click)="hop()">:0)</div>
+  	<div class="sheep" [style.left.px]="sl" [style.top.px]="st" (click)="hop()">:0) {{sheep.id}}</div>
   	<div>{{message}}</div>
   `,
   styles: [`
@@ -15,11 +18,12 @@ import { Component , OnInit} from '@angular/core';
  		height: 32px;
  		color: grey;
  		position: absolute;
-    	transform: rotate(90deg);
+    	/* transform: rotate(90deg); */
  	 };
   `]
 })
 export class SheepComponent implements OnInit {
+	@Input() sheep: Sheep;
 	sl: number;
 	st: number;
 	intervalID = 0;
@@ -27,11 +31,23 @@ export class SheepComponent implements OnInit {
 	seconds = 11;
 	fieldMin = 1;
 	fieldMax = 224;
+	nearestNeighbor: Sheep;
+	flock: Sheep[] = [];
+
+	constructor ( private sheepService: SheepService ) { }
 
 	ngOnInit() {
+		this.getSheep();
+		this.sheep.left = this.sl;
+		this.sheep.top = this.st;
 		this.sl = Math.floor(Math.random() * this.fieldMax);
 		this.st = Math.floor(Math.random() * this.fieldMax);
 		this.keepWander();
+		this.findNearest();
+	}
+
+	getSheep(): void {
+		this.flock = this.sheepService.getSheep();
 	}
 
 	wander(): void {
@@ -43,6 +59,7 @@ export class SheepComponent implements OnInit {
 		if (this.st > 224 ) this.st = this.fieldMax;
 		if (this.sl < 1 ) this.sl = 1;
 		if (this.st < 1 ) this.st = 1;
+		this.updateSheep();
 	}
 
 	hop(): void {
@@ -51,21 +68,14 @@ export class SheepComponent implements OnInit {
 		let dt = Math.floor(Math.random() * 6);
 		let hl = (dl - 3) * 20;
 		let ht = (dt - 3) * 20;
-		if (this.sl + hl > this.fieldMax) { 
-			this.sl = this.fieldMax;
-		} else { 
-			if (this.sl + hl < 1) { this.sl = 1; 
-			} else {
-				this.sl = this.sl + hl; 
-			}
+		if (this.sl + hl > this.fieldMax) { this.sl = this.fieldMax;
+		} else { if (this.sl + hl < 1) { this.sl = 1;
+			} else { this.sl = this.sl + hl }
 		}
 		if (this.st + ht > this.fieldMax) { 
-			this.st = this.fieldMax; 
-		} else { 
-			if (this.st - ht < 1) { this.st = 1;
-			} else { 
-				this.st = this.st + ht; 
-			}
+			this.st = this.fieldMax 
+		} else { if (this.st - ht < 1) { this.st = 1;
+			} else { this.st = this.st + ht }
 		}
 		/*
 		} else { this.sl = this.sl - hl; }
@@ -74,6 +84,7 @@ export class SheepComponent implements OnInit {
 		*/
 		outp = outp + ' to ' + this.sl + ', ' + this.st + '; hl: ' + hl;
 		//this.message = outp;
+		this.updateSheep();
 	}
 
 	decide(): boolean {
@@ -90,20 +101,59 @@ export class SheepComponent implements OnInit {
 			this.seconds -= 1;
 		if (this.seconds === 0) {
 			//this.message = 'Blast off!';
-			if (this.decide()) this.wander();
-			console.log("SheepComponent:keepWander:wander() called.")
+			if (this.decide()) {
+				this.wander();
+				this.nearestNeighbor = this.findNearest();
+			}
+			//console.log("SheepComponent:keepWander:wander() called.")
 		} else {
 			if (this.seconds < 0) { this.seconds = 10; } // reset
 				//this.message = `T-${this.seconds} seconds and counting`;
 			}
 		}, 100);
 	}
-	/*
-	sl: number = Math.floor(Math.random() * 235);
-	st: number = Math.floor(Math.random() * 235);
-	//console.log("SheepComponent: sl: " + this.sl);
-	sheep_left: string = this.sl + "px";
-	sheep_top: string = "25px";
-	*/
+	
+	findNearest(): Sheep {
+		let closestSheep = new Sheep();
+		if (!this.nearestNeighbor) {
+			if (this.sheep.id != this.flock[0].id) {
+				this.nearestNeighbor = this.flock[0];
+				this.message = this.sheep.id + 
+				"; Flock length: " + 
+				this.flock.length +
+				"; NN: " +
+				this.nearestNeighbor.id;
+			}
+			/*
+			": No nearest neighbor! " + 
+			this.flock[0].id + 
+			" is first in flock. New nearest neighbor: " 
+			+ this.nearestNeighbor.id;
+			*/
+		} else {
+			for (let sheep of this.flock) {
+				if (this.sheep.id != sheep.id) {
+					let oldDeltaX = +this.sheep.left - +this.nearestNeighbor.left;
+					let oldDeltaY = +this.sheep.top - +this.nearestNeighbor.top;
+					let oldDistance = Math.sqrt( oldDeltaX*oldDeltaX + oldDeltaY*oldDeltaY);
+					let newDeltaX = +this.sheep.left - +sheep.left;
+					let newDeltaY = +this.sheep.top - +sheep.top;
+					let newDistance = Math.sqrt( newDeltaX*newDeltaX + newDeltaY*newDeltaY);
+					if (newDistance < oldDistance) { 
+						closestSheep = sheep; 
+					} else { 
+						closestSheep = this.nearestNeighbor; 
+					}
+					this.message = this.sheep.id + ": oldDistance: " + Math.round(oldDistance) + "; newDistance: " + Math.round(newDistance) + ": closestSheep: " + closestSheep.id;
+					//this.message = this.sheep.id + ": newDistance: " + newDistance + "; compare sheep: " + sheep.id;
+				}
+			}
+		}
+		return closestSheep;
+	}
 
+	updateSheep(): void {
+		this.sheep.left = this.sl;
+		this.sheep.top = this.st;
+	}
 }

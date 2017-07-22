@@ -1,24 +1,26 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
-class Sheep {
-	id: number;
-
-	constructor() {
-		this.id = 0;
-	}
-}
+import { Sheep } from './sheep';
+import { SheepService } from './sheep.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrls: ['./app.component.css'],
+  providers: [ SheepService ]
 })
 
-export class AppComponent {
+export class AppComponent implements OnInit{
 	title = 'Sheep and Foxes';
 	sheepCount: number = 0;
-	sheepList: Sheep[] = [];
+	flock: Sheep[] = [];
 	message: string = "";
+
+	constructor ( private sheepService: SheepService ) { }
+
+	ngOnInit(): void {
+		this.getSheep();
+	}
 
 	addSheep(): void {
 		//this.message = this.message + "Starting addSheep(); ";
@@ -33,8 +35,12 @@ export class AppComponent {
 			newSheep.id = lastID + 1;
 			//this.sheepList.push(newSheep);
 		} else { */
-		newSheep.id = this.sheepList.length + 1;
-		this.sheepList.push(newSheep);
-		this.message = this.message + "Pushed newSheep to sheepList; ";
+		newSheep.id = this.flock.length + 1;
+		this.flock.push(newSheep);
+		this.message = this.message + "Pushed newSheep to flock; ";
+	}
+
+	getSheep(): void {
+		this.flock = this.sheepService.getSheep();
 	}
 }
