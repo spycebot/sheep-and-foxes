@@ -2,12 +2,15 @@
 <div class="container">
 	<div class="col-sm-4">
 		<h1>{{title}}</h1>
-		<input type="button" value="Add Sheep" (click)="addSheep()"> Sheep: {{sheepCount}} flock: {{flock.length}}
+		<input type="text" [(ngModel)]="newSheepCount" placeholder="0"> 
+		<input type="button" value="Add Sheep" (click)="addFlock(newSheepCount)"> Flock count: {{flock.length}}
+		<input *ngIf="!pause" type="button" value="Pause" (click)="togglePause()">
+		<input *ngIf="pause" type="button" value="Play" (click)="togglePause()">
 	</div>
 	<div class="col-sm-4">
 		<div class="field">
 			<div *ngFor="let sheep of flock">
-				<sheep [sheep]="sheep"></sheep>
+				<sheep [sheep]="sheep" [pause]="pause"></sheep>
 			</div>
 		</div>
 	</div>

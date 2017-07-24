@@ -12,9 +12,10 @@ import { SheepService } from './sheep.service';
 
 export class AppComponent implements OnInit{
 	title = 'Sheep and Foxes';
-	sheepCount: number = 0;
 	flock: Sheep[] = [];
 	message: string = "";
+	newSheepCount: number = 1;
+	pause: boolean = false;
 
 	constructor ( private sheepService: SheepService ) { }
 
@@ -26,21 +27,30 @@ export class AppComponent implements OnInit{
 		//this.message = this.message + "Starting addSheep(); ";
 		//console.log("AppComponent:addSheep: sheepList" + this.sheepList.toString());
 		let newSheep = new Sheep();
-		this.sheepCount = this.sheepCount + 1; // old
-		/* if (this.sheepList.length > 0) {
-			this.message = this.message + "sheepList.length = " + this.sheepList.length + "; ";
-			let lastSheep = this.sheepList[length-1];
-			let lastID = lastSheep.id;
-			//let newSheep = new Sheep();
-			newSheep.id = lastID + 1;
-			//this.sheepList.push(newSheep);
-		} else { */
 		newSheep.id = this.flock.length + 1;
 		this.flock.push(newSheep);
 		this.message = this.message + "Pushed newSheep to flock; ";
 	}
 
+	addFlock(c: number) {
+		console.log("AppComponent:addFlock:c:" + c);
+		var flock: Sheep[] = [];
+		for (var i = 1; i <= c; i++) {
+			let newSheep = new Sheep();
+			newSheep.id = this.flock.length + 1;
+			flock.push(newSheep);
+			// the great redundancy
+			this.flock.push(newSheep);
+		}
+		this.newSheepCount = 1;
+		// 'kill flock' return flock;
+	} 
+
 	getSheep(): void {
 		this.flock = this.sheepService.getSheep();
+	}
+
+	togglePause() {
+		this.pause = !this.pause;
 	}
 }

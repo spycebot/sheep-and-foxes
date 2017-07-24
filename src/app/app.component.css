@@ -5,3 +5,5 @@
 	width: 256px;
 	background-color: #689F38;
 }
+
+input[type="text"] { width: 4em; }
