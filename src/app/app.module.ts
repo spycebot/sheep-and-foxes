@@ -4,11 +4,13 @@ import { FormsModule } from '@angular/forms';
 
 import { AppComponent } from './app.component';
 import { SheepComponent } from './sheep.component';
+import { SheepDetailComponent } from './sheep-detail.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    SheepComponent
+    SheepComponent,
+    SheepDetailComponent
   ],
   imports: [
     BrowserModule,

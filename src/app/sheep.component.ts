@@ -6,10 +6,17 @@ import { SheepService } from './sheep.service';
 @Component({
   selector: 'sheep',
   template: `
-  	<div class="sheep" [style.left.px]="sl" [style.top.px]="st" (click)="flockStep()">:0) {{sheep.id}}</div>
+  	<div class="sheep" [style.left.px]="sl" [style.top.px]="st" (click)="toggleDetail()">:0) {{sheep.id}}</div>
   	<div>{{message}}</div>
+  	<div class="sheepDetail" *ngIf="showDetail">
+  		<!-- h2>Sheep {{sheep.id}}</h2 -->
+  		<sheep-detail [sheep]="sheep" [neighbor]="nearestNeighbor" (onClose)="onClose($event)"></sheep-detail>
+  	</div>
   `,
   styles: [`
+  	:host { 
+    	font-size: 0.8em; 
+    }
  	.sheep { 
  		border: 2px solid grey;
  		border-radius: 4px;
@@ -34,18 +41,23 @@ export class SheepComponent implements OnInit {
 	fieldMax = 224;
 	nearestNeighbor: Sheep;
 	flock: Sheep[] = [];
+	// New Order
+	gridSize = 32;
+	showDetail: boolean = false;
 
 	constructor ( private sheepService: SheepService ) { }
 
 	ngOnInit() {
 		this.getSheep();
-		this.sl = Math.floor(Math.random() * this.fieldMax);
-		this.st = Math.floor(Math.random() * this.fieldMax);
+		//this.sl = Math.floor(Math.random() * this.fieldMax);
+		//this.st = Math.floor(Math.random() * this.fieldMax);
+		this.sl = this.gridSize * Math.floor(Math.random() * 10);
+		this.st = this.gridSize * Math.floor(Math.random() * 10);
 		this.sheep.left = this.sl;
 		this.sheep.top = this.st;
 		this.nearestNeighbor = new Sheep();
-		console.log("ngOnInit Sheep " + this.sheep.id + ": nearestNeighbor ID: " + this.nearestNeighbor.id + ": left: " + this.nearestNeighbor.left + ", top: " + this.nearestNeighbor.top);
-		this.keepWander();
+		//console.log("ngOnInit Sheep " + this.sheep.id + ": nearestNeighbor ID: " + this.nearestNeighbor.id + ": left: " + this.nearestNeighbor.left + ", top: " + this.nearestNeighbor.top);
+		this.repeatBehavior();
 		this.findNearest(); // Called twice???
 	}
 
@@ -54,21 +66,36 @@ export class SheepComponent implements OnInit {
 	}
 
 	wander(): void {
-		let dl = Math.floor(Math.random() * 3);
-		let dt = Math.floor(Math.random() * 3);
-		//this.sl = this.sl - (dl - 1);
-		//this.st = this.st - (dt - 1);
-		this.moveSheep(this.sl - (dl - 1), this.st - (dt - 1));
-		//this.updateSheep();  // -> Confine to moveSheep()
+		let dl = Math.round(Math.random() * 2);
+		let dt = Math.round(Math.random() * 2);
+		//let cl = this.sl - (32 * (dl - 2));
+		//let ct = this.st - (32 * (dt - 2));
+		let cl = 32 * (dl - 1);
+		let ct = 32 * (dt - 1);
+		this.moveSheep(this.sl - cl, this.st - ct);
+		console.log("Sheep " + this.sheep.id + " wandered " + cl + ", " + ct + ". dl="+dl+", dt="+dt);
 	}
 
 	moveSheep(tl: number, tt: number): void {
+		// Rememver there is teh dom element and the js object
+		// generally adjust this.sheep.top
+		// only adjust st when it is equal to a rounded up value
+		// Currently the component variable is what is set, synched under update sheep
+		// A massive rewiring, so that the state updates the object, and the display is only updated conditionally
 		this.sl = tl;
 		this.st = tt;
-		if (this.sl > 224 ) this.sl = this.fieldMax;
-		if (this.st > 224 ) this.st = this.fieldMax;
-		if (this.sl < 1 ) this.sl = 1;
-		if (this.st < 1 ) this.st = 1;
+		if (this.sl > 224 ) {
+			this.sl = this.fieldMax;
+		}
+		if (this.st > 224 ) {
+			this.st = this.fieldMax;
+		}
+		if (this.sl < 1 ) {
+			this.sl = 1;
+		}
+		if (this.st < 1 ) {
+			this.st = 1;
+		}
 		this.updateSheep();
 
 	}
@@ -103,74 +130,35 @@ export class SheepComponent implements OnInit {
 		this.updateSheep(); // -> Confine to moveSheep()
 	}
 
-	decide(): boolean {
-		let c = Math.random();
-		if (c > 0.5) return true;
+	decide(c): boolean {
+		if (!c) c = 0.5;
+		let v = Math.random();
+		if (v > c) return true;
 		else return false;
+		//console.log("Sheep " + this.sheep.id + ": decide c: " + c);
 	}
 
 	clearTimer() { clearInterval(this.intervalID); }
 
-	private keepWander() {
+	private repeatBehavior() {
 		this.clearTimer();
 		this.intervalID = window.setInterval(() => {
 			this.seconds -= 1;
+		if (this.seconds === 2) {
+			this.nearestNeighbor = this.findNearest();
+
+		}
 		if (this.seconds === 0) {
-			//this.message = 'Blast off!';
-			//if (this.decide()) {
-				//this.wander();
-				this.nearestNeighbor = this.findNearest();
-				/*
-				let candidateSheep = this.findNearest();
-				if (candidateSheep && candidateSheep.id > 0) { 
-					console.log("Sheep: " + this.sheep.id + ": candidateSheep ID: " + candidateSheep.id);
-					this.nearestNeighbor = candidateSheep;
-				}
-				*/
-				this.flockStep();
-			//}
-			//console.log("SheepComponent:keepWander:wander() called.")
+			//this.wander();
+			/* COMPARING AND MOVING SHOULD BE DONE AT DIFFERENT TIMES */
+			//this.nearestNeighbor = this.findNearest();
+			this.flockStep();
+			//console.log("SheepComponent:repeatBehavior:wander() called.")
 		} else {
-			if (this.seconds < 0) { this.seconds = 10; } // reset
+			if (this.seconds < 0) { this.seconds = (Math.round(Math.random() * 10)) + 5; } // reset
 				//this.message = `T-${this.seconds} seconds and counting`;
 			}
-		}, 10);
-	}
-	
-	findNearest0() {
-		if (!this.pause) {
-			let closestSheep: Sheep;
-			if (this.nearestNeighbor.id == 0 ) {	// this.nearestNeighbor && 
-				switch (this.sheep.id) {
-					case 1: {
-						closestSheep = this.flock[1];
-						break;
-					}
-					default: {
-						closestSheep = this.flock[0];
-						break;
-					}
-				}
-			} else {
-				console.log("Sheep " + this.sheep.id + ": this.nearestNeighbor: " + this.nearestNeighbor.id);
-				for (let sheepy of this.flock) {
-					if (this.sheep.id != sheepy.id && this.nearestNeighbor.id != sheepy.id) {
-						let oldDeltaX = +this.sheep.left - +this.nearestNeighbor.left;
-						let oldDeltaY = +this.sheep.top - +this.nearestNeighbor.top;
-						//let oldDistance = Math.sqrt( oldDeltaX*oldDeltaX + oldDeltaY*oldDeltaY);
-						let oldDistance = this.magnitude(oldDeltaX, oldDeltaY);
-						let newDeltaX = +this.sheep.left - +sheepy.left;
-						let newDeltaY = +this.sheep.top - +sheepy.top;
-						//let newDistance = Math.sqrt( newDeltaX*newDeltaX + newDeltaY*newDeltaY);
-						let newDistance = this.magnitude(newDeltaX, newDeltaY);
-						if (newDistance < oldDistance) { 
-							closestSheep = sheepy;
-						}
-					}
-				}
-			}
-			return closestSheep;
-		}
+		}, 500);
 	}
 
 	findNearest() {
@@ -191,6 +179,7 @@ export class SheepComponent implements OnInit {
 		} else { 
 			for (let sheep of flock) {
 				//if (!this.pause) console.log("findNearest Sheep " + this.sheep.id + ": target sheep ID: " + sheep.id);
+				//Deliberate exclusion from comparsion is meant to always prefer other sheep
 				if (sheep.id != this.sheep.id) {
 					//if (!this.pause) console.log ("findNearest Sheep " + this.sheep.id + ": comparable sheep ID: " + sheep.id);
 					if (sheep.id != oldNearest.id) {
@@ -203,7 +192,7 @@ export class SheepComponent implements OnInit {
 				}
 			}
 		}
-		this.message = "Sheep " + this.sheep.id + ": newNearest ID: " + newNearest.id + " nearestNeighbor: " + this.nearestNeighbor.id;
+		// OK this.message = "Sheep " + this.sheep.id + ": newNearest ID: " + newNearest.id + " nearestNeighbor: " + this.nearestNeighbor.id;
 		return newNearest;
 	}
 
@@ -217,7 +206,7 @@ export class SheepComponent implements OnInit {
 		let newDeltaY = +this.sheep.top - +candidate.top;
 		//let newDistance = Math.sqrt( newDeltaX*newDeltaX + newDeltaY*newDeltaY);
 		let newDistance = this.magnitude(newDeltaX, newDeltaY);
-		if (!this.pause) console.log("compareSheep Sheep " + this.sheep.id + ": newDistance: " + newDistance + " (" + candidate.id + "), oldDistance: " + oldDistance + " (" + old.id + ")");
+		// OK if (!this.pause) console.log("compareSheep Sheep " + this.sheep.id + ": newDistance: " + newDistance + " (" + candidate.id + "), oldDistance: " + oldDistance + " (" + old.id + ")");
 		if (newDistance < oldDistance) { 
 			closestSheep = candidate;
 		} else {
@@ -235,18 +224,19 @@ export class SheepComponent implements OnInit {
 				let distance = this.magnitude(deltaX, deltaY);
 				let nX = this.qnormal( deltaX );
 				let nY = this.qnormal( deltaY );
-				this.message = "Sheep " + this.sheep.id + ": NN: " + this.nearestNeighbor.id + ", nX " + nX + ", nY " + nY + "." + "; " + deltaX + ", " + deltaY + "; distance: " + distance + ".";
-				if (distance > 40) {
+				//this.message = "Sheep " + this.sheep.id + ": Pos: " + this.sheep.left + "," + this.sheep.top+ ", NN: " + this.nearestNeighbor.id + ", nX " + nX + ", nY " + nY + "." + "; Delta: " + deltaX + ", " + deltaY + "; distance: " + Math.round(distance) + ".";
+				if (distance > this.gridSize * 2) {
 					//this.sl = this.sl - nX;
 					//this.st = this.st - nY;
 					this.moveSheep(this.sl - nX, this.st - nY)
-				} else if (distance < 30) {
+				} else if (distance < this.gridSize) {
+					if (distance == 0) { this.wander(); }
+					else { this.moveSheep(this.sl + nX, this.st + nY); }
 					//this.sl = this.sl + nX;
 					//this.st = this.st + nY;
-					this.moveSheep(this.sl + nX, this.st + nY)
 
 				} else {
-					this.wander();
+					if (this.decide(0.01)) this.wander();
 				}
 			}
 		}
@@ -261,9 +251,17 @@ export class SheepComponent implements OnInit {
 
 	qnormal(d: number) {
 		let v: number;
-		if (d > 0.333) { v = 1; 
-		} else { if (d < -0.333) { v = -1;
+		if (d > 0.333) { v = this.gridSize; 
+		} else { if (d < -0.333) { v = -this.gridSize;
 			} else { v = 0 }}
 		return v;
+	}
+
+	toggleDetail() {
+		this.showDetail = !this.showDetail;
+	}
+
+	onClose() {
+		this.showDetail = false;
 	}
 }
