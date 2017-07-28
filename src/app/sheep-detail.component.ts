@@ -9,13 +9,13 @@ import { Sheep } from './sheep';
 		<table>
 			<!-- tr><td>ID:</td><td>{{sheep.id}}</td></tr -->
 			<tr><td>Left:</td><td>{{sheep.left}}<td>Top:</td><td>{{sheep.top}}</tr>
-			<tr><td>Neighbor:</td><td>{{neighbor.id}}<td>Distance:</td><td></tr>
+			<tr><td>Neighbor:</td><td>{{neighbor.id}}<td>Age:</td><td>{{sheep.age}}</td></tr>
 		</table>
-		<div id="message">{{message}}</div>
+		<!-- div id="message">{{message}}</div -->
 		<input type="button" value="close" (click)="closeDetail()">
 	`,
 	styles: [`
-	 	 :host {
+	 	:host {
 	 	 	position: absolute;
 	 	 	top: 36px;
 	 	 	left: 36px;
@@ -23,11 +23,17 @@ import { Sheep } from './sheep';
 	 	 	background-color: white;
 	 	 	border: 2px solid grey;
 	 	 	border-radius: 4px;
-	 	 }
-	 	 h2 { 
+	 	 	padding: 4px;
+	 	}
+	 	h2 { 
 	 	 	font-size: 1.2em;
 	 	 	font-weight: 600;
-	 	 }
+	 	 	/* border: 1px solid lightgreen; */
+	 		margin: 4px 0px;
+	 	}
+	 	table {
+		    border-collapse: collapse;
+		}
  	 `]
 })
 

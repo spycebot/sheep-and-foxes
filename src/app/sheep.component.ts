@@ -1,4 +1,4 @@
-import { Component , OnInit, Input} from '@angular/core';
+import { Component , OnInit, Input, Output, EventEmitter } from '@angular/core';
 
 import { Sheep } from './sheep';
 import { SheepService } from './sheep.service';
@@ -6,11 +6,15 @@ import { SheepService } from './sheep.service';
 @Component({
   selector: 'sheep',
   template: `
-  	<div class="sheep" [style.left.px]="sl" [style.top.px]="st" (click)="toggleDetail()">:0) {{sheep.id}}</div>
+  	<div class="sheep" [style.left.px]="sl" [style.top.px]="st" (click)="toggleDetail()">
+	  	<span *ngIf="alive">:0)</span>
+	  	<span *ngIf="!alive">X</span> 
+	  	{{sheep.id}}
+  	</div>
   	<div>{{message}}</div>
   	<div class="sheepDetail" *ngIf="showDetail">
   		<!-- h2>Sheep {{sheep.id}}</h2 -->
-  		<sheep-detail [sheep]="sheep" [neighbor]="nearestNeighbor" (onClose)="onClose($event)"></sheep-detail>
+  		<sheep-detail [style.zIndex]="10" [sheep]="sheep" [neighbor]="nearestNeighbor" (onClose)="onClose($event)"></sheep-detail>
   	</div>
   `,
   styles: [`
@@ -32,6 +36,8 @@ import { SheepService } from './sheep.service';
 export class SheepComponent implements OnInit {
 	@Input() sheep: Sheep;
 	@Input() pause: boolean;
+	@Output() onLamb = new EventEmitter<Sheep>();
+	@Output() onDie = new EventEmitter<Sheep>();
 	sl: number;
 	st: number;
 	intervalID = 0;
@@ -44,6 +50,7 @@ export class SheepComponent implements OnInit {
 	// New Order
 	gridSize = 32;
 	showDetail: boolean = false;
+	alive: boolean = false;
 
 	constructor ( private sheepService: SheepService ) { }
 
@@ -57,6 +64,7 @@ export class SheepComponent implements OnInit {
 		this.sheep.top = this.st;
 		this.nearestNeighbor = new Sheep();
 		//console.log("ngOnInit Sheep " + this.sheep.id + ": nearestNeighbor ID: " + this.nearestNeighbor.id + ": left: " + this.nearestNeighbor.left + ", top: " + this.nearestNeighbor.top);
+		this.alive = true;
 		this.repeatBehavior();
 		this.findNearest(); // Called twice???
 	}
@@ -73,7 +81,7 @@ export class SheepComponent implements OnInit {
 		let cl = 32 * (dl - 1);
 		let ct = 32 * (dt - 1);
 		this.moveSheep(this.sl - cl, this.st - ct);
-		console.log("Sheep " + this.sheep.id + " wandered " + cl + ", " + ct + ". dl="+dl+", dt="+dt);
+		//console.log("Sheep " + this.sheep.id + " wandered " + cl + ", " + ct + ". dl="+dl+", dt="+dt);
 	}
 
 	moveSheep(tl: number, tt: number): void {
@@ -149,6 +157,18 @@ export class SheepComponent implements OnInit {
 
 		}
 		if (this.seconds === 0) {
+			this.sheep.age = this.sheep.age + 1;
+			if (this.sheep.age == 12 ) { // || this.sheep.age == 24) {
+				//this.message = "Sheep " + this.sheep.id + " lambed at age " + this.sheep.age + "!";
+				this.onLamb.emit(this.sheep);
+			}
+			if (this.sheep.age > 36) {
+				this.message = "Sheep " + this.sheep.id + " died at age " + this.sheep.age + "!";
+				this.killSheep();
+			}
+			if (this.sheep.age > 48) {
+				this.onDie.emit(this.sheep);
+			}
 			//this.wander();
 			/* COMPARING AND MOVING SHOULD BE DONE AT DIFFERENT TIMES */
 			//this.nearestNeighbor = this.findNearest();
@@ -216,7 +236,7 @@ export class SheepComponent implements OnInit {
 	}
 
 	flockStep(): void {
-		if (!this.pause) {
+		if (!this.pause && this.alive) {
 			if (this.nearestNeighbor.id != 0) {
 				//console.log(this.sheep.id + ":SheepComponent:flockStep: this.sheep.left: " + this.sheep.left + "; nearestNeighbor left: " + this.nearestNeighbor.left);
 				let deltaX = +this.sheep.left - +this.nearestNeighbor.left;
@@ -263,5 +283,9 @@ export class SheepComponent implements OnInit {
 
 	onClose() {
 		this.showDetail = false;
+	}
+
+	killSheep() {
+		this.alive = false;
 	}
 }

@@ -16,6 +16,7 @@ export class AppComponent implements OnInit{
 	message: string = "";
 	newSheepCount: number = 1;
 	pause: boolean = false;
+	//intervalID = 0;
 
 	constructor ( private sheepService: SheepService ) { }
 
@@ -29,15 +30,23 @@ export class AppComponent implements OnInit{
 		let newSheep = new Sheep();
 		newSheep.id = this.flock.length + 1;
 		this.flock.push(newSheep);
-		this.message = this.message + "Pushed newSheep to flock; ";
+		// OK this.message = this.message + "Pushed newSheep to flock; ";
 	}
 
 	addFlock(c: number) {
 		console.log("AppComponent:addFlock:c:" + c);
 		var flock: Sheep[] = [];
 		for (var i = 1; i <= c; i++) {
-			let newSheep = new Sheep();
-			newSheep.id = this.flock.length + 1;
+			let newSheep = new Sheep(); 
+			let lastSheep: Sheep;
+			if (this.flock.length > 0) {
+				lastSheep = this.flock[this.flock.length - 1];
+				newSheep.id = +lastSheep.id + 1;
+			} else {
+				newSheep.id = 1;
+			}
+			//newSheep.id = this.flock.length + 1;
+			//newSheep.id = this.flock[length - 1].id + 1;
 			flock.push(newSheep);
 			// the great redundancy
 			this.flock.push(newSheep);
@@ -52,5 +61,21 @@ export class AppComponent implements OnInit{
 
 	togglePause() {
 		this.pause = !this.pause;
+	}
+
+	onLamb(yew: Sheep) {
+		if (yew.age < 36) {
+			this.addFlock(1);
+		} /* else {
+			let pos: number = this.flock.indexOf(yew);
+			this.message = "Yew " + yew.id + " died in position " + pos + "."; 
+		} */
+		//this.message = "Yew " + yew.id + " had a lamb at " + yew.left + ", " + yew.top;
+	}
+
+	onDie(sheep: Sheep) {
+		let pos: number = this.flock.indexOf(sheep);
+		this.message = "Sheep " + sheep.id + " died... at array position " + pos;
+		this.flock.splice(pos, 1);
 	}
 }
